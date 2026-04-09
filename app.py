@@ -1,40 +1,50 @@
 import streamlit as st
-import pandas as pd
 import nltk
 import re
+import pickle
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
-import pickle
+
+# -------------------- Setup --------------------
+nltk.download("stopwords")
+
+STOPWORDS = set(stopwords.words("english"))
+STEMMER = PorterStemmer()
 
 
-nltk.download('stopwords')
-words = stopwords.words("english")
-stemmer = PorterStemmer()
-
-
-
-st.title('Streamlit Project')
-st.write("News Classification")
-
-
-# Open the file in binary mode for reading
-with open('LogisticRegression.pickle', 'rb') as file:
-    # Load the data from the file
-    model = pickle.load(file)
-
-
-
-
-#taking input from users
-data  = st.text_area("Enter New for the Classification")
-
-if st.button('Submit'):
-    d = {"predict_news": [data]}
-    df = pd.DataFrame(d)
-    df['predict_news'] = list(map(lambda x: " ".join([i for i in x.lower().split() if i not in words]), df['predict_news']))
-    df['predict_news'] = df['predict_news'].apply(lambda x: " ".join([stemmer.stem(i) for i in re.sub("[^a-zA-Z]", " ", x).split() if i not in words]).lower())
+# -------------------- Functions --------------------
+def preprocess_news(news: str) -> str:
+    news = news.lower()
+    news = re.sub("[^a-zA-Z]", " ", news)
+    words = news.split()
     
-    predict_news_cat = model.predict(df['predict_news'])
-    st.write(predict_news_cat)
+    words = [word for word in words if word not in STOPWORDS]
+    words = [STEMMER.stem(word) for word in words]
     
-    st.write(predict_news_cat)
+    return " ".join(words)
+
+
+@st.cache_resource
+def load_model():
+    with open("LogisticRegression.pickle", "rb") as file:
+        return pickle.load(file)
+
+
+# -------------------- App UI --------------------
+st.title("News Classification App")
+st.write("Classify news into categories using ML")
+
+model = load_model()
+
+news_input = st.text_area("Enter News Content")
+
+# -------------------- Prediction --------------------
+if st.button("Classify News"):
+    if news_input.strip():
+        cleaned_news = preprocess_news(news_input)
+        news_category = model.predict([cleaned_news])[0]
+
+        st.subheader("Predicted News Category:")
+        st.write(news_category)
+    else:
+        st.warning("Please enter news content before classifying.")
