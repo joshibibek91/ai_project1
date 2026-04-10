@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="D:\IT Works\AI_class\ai_streamlit\venv"
+VIRTUAL_ENV="D:\IT Works\AI_class\ai_streamlit_and_fastapi\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
